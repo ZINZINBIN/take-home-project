@@ -1,0 +1,22 @@
+{
+  "name": "problem01",
+  "version": "1.0.0",
+  "description": "left-right image classifier with mobilenet and tfjs",
+  "main": "index.js",
+  "scripts": {
+    "build": "cross-env NODE_ENV=production parcel build index.html --no-minify --public-url ./",
+    "link-local": "yalc link",
+    "watch": "./serve.sh"
+  },
+  "author": "zinzinbin",
+  "license": "ISC",
+  "dependencies": {
+    "@tensorflow/tfjs": "^3.11.0",
+    "@tensorflow/tfjs-vis": "^1.5.1",
+    "css-loader": "^6.5.1",
+    "node-sass": "^6.0.1",
+    "nodemon": "^2.0.15",
+    "sass-convert": "^0.5.2"
+  },
+  "type": "module"
+}

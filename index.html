@@ -1,0 +1,248 @@
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <title>Webcam Pacman</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.cyan-teal.min.css" />
+  <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" rel="stylesheet">
+  <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+  <link rel="stylesheet" type = "text/css" href="./styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/knn-classifier"></script>
+</head>
+<body>
+  <header>
+    <p>Turn your <b>Web Camera</b> into a controller using a <b>Neural Network</b>.</p>
+    <p>Train a model to balance a pole on a cart using reinforcement learning and mobilenet</p>
+  </header>
+
+  <div id="no-webcam">
+      No webcam found. <br/>
+      To use this demo, use a device with a webcam.
+    </div>
+ 
+  <div id="status">Loading mobilenet...</div>
+
+  <div class="controller-panels" id="controller" style="display:true">
+    <div class="panel training-panel">
+
+      <!-- Big buttons. -->
+      <div class="panel-row big-buttons">
+        <button id="train">
+          <img width="66" height="66" src="./imgs/button.svg" />
+          <span id="train-status">TRAIN MODEL</span>
+        </button>
+        <button id="predict">
+          <img width="66" height="66" src="./imgs/button.svg" />
+          <span>PLAY</span>
+        </button>
+      </div><!-- /.panel-row -->
+
+      <div class="panel-row params-webcam-row">
+
+        <!-- Hyper params. -->
+        <div class="hyper-params">
+
+          <!-- Learning rate -->
+          <div class="dropdown">
+            <label>Learning rate</label>
+            <div class="select">
+              <select id="learningRate">
+                <option value="0.00001">0.00001</option>
+                <option selected value="0.0001">0.0001</option>
+                <option value="0.01">0.001</option>
+                <option value="0.03">0.003</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Batch size -->
+          <div class="dropdown">
+            <label>Batch size</label>
+            <div class="select">
+              <select id="batchSizeFraction">
+                <option value="0.05">0.05</option>
+                <option value="0.1">0.1</option>
+                <option selected value="0.4">0.4</option>
+                <option value="1">1</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Epochs -->
+          <div class="dropdown">
+            <label>Epochs</label>
+            <div class="select">
+              <select id="epochs">
+                <option value="10">10</option>
+                <option selected value="20">20</option>
+                <option value="40">40</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Hidden units -->
+          <div class="dropdown">
+            <label>Hidden units</label>
+            <div class="select">
+              <select id="dense-units">
+                <option value="10">10</option>
+                <option selected value="100">100</option>
+                <option value="200">200</option>
+              </select>
+            </div>
+          </div>
+
+        </div><!-- /.hyper-params -->
+
+        <div class="webcam-box-outer">
+          <div class="webcam-box-inner">
+            <video autoplay playsinline muted id="webcam" width="224" height="224"></video>
+          </div>
+        </div>
+
+        <!-- <button id = "class-a">Add A</button>
+        <button id = "class-b">Add B</button>
+        <button id = "class-c">Add C</button> -->
+
+      </div><!-- /.panel-row -->
+
+      <div class="panel-row panel-row-middle">
+        <div class="panel-cell panel-cell-left">
+          <div class="thumb-box">
+            <div class="thumb-box-outer">
+              <div class="thumb-box-inner">
+                <canvas class="thumb" width=224 height=224 id="left-thumb"></canvas>
+              </div>
+              <button class="record-button" id="left"/><span>Add Sample</span></button>
+            </div>
+            <p>
+              <span id="left-total">0</span> examples
+            </p>
+          </div>
+        </div><!-- ./panel-cell -->
+
+        <div class="panel-cell panel-cell-center panel-cell-fill">
+          <img height="54" width="129" src="./imgs/left-right-arrows.png" />
+        </div><!-- ./panel-cell -->
+
+        <div class="panel-cell panel-cell-right">
+          <div class="thumb-box">
+            <div class="thumb-box-outer">
+              <div class="thumb-box-inner">
+                <canvas class="thumb" width=224 height=224 id="right-thumb"></canvas>
+              </div>
+              <button class="record-button" id="right"/><span>Add Sample</span></button>
+            </div>
+            <p>
+              <span id="right-total">0</span> examples
+            </p>
+          </div>
+        </div><!-- ./panel-cell -->
+
+      </div><!-- /.panel-row -->
+
+    </div><!-- /.panel -->
+
+    <!-- right section -->
+    <div class="panel joystick-panel">
+        <!-- cart pole page added -->
+        <section>
+        <p class='section-head'>Status</p>
+        <div>
+          <span id="app-status">Standing by.</span>
+        </div>
+
+        <div>
+          <p class='section-head'>Initialize Model</p>
+          <div class="with-cols">
+            <div class="with-rows init-model">
+              <div class="input-div with-rows">
+                <label class="input-label">Hidden layer size(s) (e.g.: "256", "32,64"):</label>
+                <input id="hidden-layer-sizes" value="128"></input>
+              </div>
+              <button id="create-model" disabled="true">Create model</button>
+            </div>
+            <div class="with-rows init-model">
+              <div class="input-div with-rows">
+                <label class="input-label">Locally-stored model</label>
+                <input id="stored-model-status" value="N/A" disabled="true" readonly="true"></input>
+              </div>
+              <button id="delete-stored-model" disabled="true">Delete stored model</button>
+            </div>
+          </div>
+
+          <p class='section-head'>Training Parameters</p>
+          <div class="with-rows">
+            <div class="input-div">
+              <label class="input-label">Number of iterations:</label>
+              <input id="num-iterations" value="20"></input>
+            </div>
+            <div class="input-div">
+              <label class="input-label">Games per iteration:</label>
+              <input id="games-per-iteration" value="20"></input>
+            </div>
+            <div class="input-div">
+              <label class="input-label">Max. steps per game:</label>
+              <input id="max-steps-per-game" value="500"></input>
+            </div>
+            <div class="input-div">
+              <label class="input-label">Reward discount rate:</label>
+              <input id="discount-rate" value="0.95"></input>
+            </div>
+            <div class="input-div">
+              <label class="input-label">Learning rate:</label>
+              <input id="learning-rate" value="0.05"></input>
+            </div>
+            <div class="input-div">
+              <label class="input-label">Render during training:</label>
+              <input type="checkbox" id="render-during-training" />
+              <span class="note">Uncheck me to speed up training.</span>
+            </div>
+
+            <div class="buttons-section">
+              <button id="train" disabled="true">Train</button>
+              <button id="test" disabled="true">Test</button>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </div><!-- /.panel -->
+  </div><!-- /#controller -->
+
+  <div class = "simulation-panels">
+        <section>
+        <p class='section-head'>Training Progress</p>
+        <div class="with-rows">
+          <div class="status">
+            <label id="train-status">Iteration #:</label>
+            <progress value="0" max="100" id="train-progress"></progress>
+          </div>
+          <div class="status">
+            <label id="iteration-status">Game #:</label>
+            <progress value="0" max="100" id="iteration-progress"></progress>
+          </div>
+
+          <div class="status">
+            <label>Training speed:</label>
+            <span id="train-speed" class="status-span"></span>
+          </div>
+          <div id="steps-container"></div>
+        </div>
+      </section>
+
+      <section>
+        <p class='section-head'>Simulation</p>
+        <div>
+          <canvas id="cart-pole-canvas" height="150px" width="500px"></canvas>
+        </div>
+      </section>
+    </div>
+
+  <p id="copyright">KC-ML2 take home project written by zinzinbin</p>
+  
+  <script src="https://storage.googleapis.com/tfjs-examples/assets/webcam-transfer-learning/pacman-google.js"></script>
+  <script src="index.js"></script>
+</body>
+</html>
